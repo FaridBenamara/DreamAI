@@ -2,8 +2,6 @@ import logging
 from groq import Groq
 import requests
 import io
-from pydub import AudioSegment
-from pydub.playback import play
 from config import get_api_key
 
 # Configuration du logging
@@ -30,16 +28,22 @@ def transcribe_audio(audio_file_data):
     """
     try:
         logger.info("Début de la transcription audio")
+        
+        # Préparation du fichier audio
         if isinstance(audio_file_data, io.BytesIO):
-            file_to_send = (audio_file_data.name if hasattr(audio_file_data, 'name') else "audio.wav", audio_file_data.getvalue())
+            file_name = getattr(audio_file_data, 'name', 'audio.wav')
+            file_content = audio_file_data.getvalue()
         else:
-            file_to_send = (audio_file_data.name, audio_file_data.getvalue())
+            file_name = audio_file_data.name
+            file_content = audio_file_data.getvalue()
 
+        # Envoi à l'API Groq
         transcript = groq_client.audio.transcriptions.create(
-            file=file_to_send,
+            file=(file_name, file_content),
             model="whisper-large-v3",
             prompt="Le rêve décrit est..."
         )
+        
         logger.info("Transcription audio réussie")
         return transcript.text
     except Exception as e:
@@ -56,10 +60,10 @@ def generate_image(prompt_text: str):
             "https://clipdrop-api.co/text-to-image/v1",
             headers={"x-api-key": CLIPDROP_API_KEY},
             files={"prompt": (None, prompt_text, "text/plain")},
-            timeout=30  # Timeout de 30 secondes
+            timeout=30
         )
 
-        response.raise_for_status()  # Lève une exception pour les codes d'erreur HTTP
+        response.raise_for_status()
         logger.info("Génération d'image réussie")
         return response.content
     except requests.exceptions.Timeout:
