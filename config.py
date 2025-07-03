@@ -13,6 +13,10 @@ class ConfigError(Exception):
     """Exception personnalisée pour les erreurs de configuration"""
     pass
 
+def is_streamlit_cloud():
+    """Vérifie si l'application tourne sur Streamlit Cloud"""
+    return os.environ.get("STREAMLIT_RUNTIME") == "1"
+
 def get_api_key(api_name: str) -> str:
     """
     Récupère une clé API depuis st.secrets, les variables d'environnement, ou demande à l'utilisateur.
@@ -42,9 +46,9 @@ def get_api_key(api_name: str) -> str:
     
     # Si toujours pas de clé, vérifier si nous sommes en développement
     if not key:
-        is_production = os.environ.get("ENVIRONMENT") == "production"
+        is_production = os.environ.get("ENVIRONMENT") == "production" or is_streamlit_cloud()
         
-        if is_production or st._is_running_with_streamlit:
+        if is_production:
             error_msg = f"""
             ⚠️ Configuration manquante pour {api_name} ⚠️
             
@@ -58,10 +62,10 @@ def get_api_key(api_name: str) -> str:
         
         # En développement local, permettre la saisie manuelle
         st.warning(f"⚠️ Veuillez configurer votre clé API {api_name}")
-        st.info("""
+        st.info(f"""
         Pour configurer en local :
         1. Créez un fichier `.streamlit/secrets.toml`
-        2. Ajoutez votre clé : `{api_name_lower} = "votre_cle_api"`
+        2. Ajoutez votre clé : {api_name_lower} = "votre_cle_api"
         """)
         
         key_input = st.text_input(
