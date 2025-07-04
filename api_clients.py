@@ -11,6 +11,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Mapping des émotions vers les emojis
+EMOTION_EMOJIS = {
+    "Heureux": "😊",
+    "Joyeux": "😊",
+    "Content": "😊",
+    "Stressant": "😰",
+    "Stressé": "😰",
+    "Anxieux": "😰",
+    "Neutre": "😐",
+    "Calme": "😌",
+    "Triste": "😢",
+    "Mélancolique": "😢",
+    "Déprimé": "😢",
+    "Excité": "🤩",
+    "Enthousiaste": "🤩",
+    "Passionné": "🤩",
+    "Effrayant": "😱",
+    "Effrayé": "😱",
+    "Terrifié": "😱",
+    "Surpris": "😲",
+    "Étonné": "😲",
+    "En colère": "😠",
+    "Furieux": "😠",
+    "Amoureux": "🥰",
+    "Paisible": "😌"
+}
+
 # Récupérer les clés API
 try:
     GROQ_API_KEY = get_api_key("Groq")
@@ -20,6 +47,15 @@ try:
 except Exception as e:
     logger.error(f"Erreur lors de l'initialisation des clés API: {e}")
     raise
+
+def get_emotion_with_emoji(emotion_text: str) -> str:
+    """
+    Retourne l'émotion avec son emoji correspondant.
+    Si l'émotion n'est pas dans le dictionnaire, retourne juste l'émotion.
+    """
+    emotion_text = emotion_text.strip()
+    emoji = EMOTION_EMOJIS.get(emotion_text, "❓")
+    return f"{emotion_text} {emoji}"
 
 def transcribe_audio(audio_file_data):
     """
@@ -76,6 +112,7 @@ def generate_image(prompt_text: str):
 def analyze_emotion(text: str):
     """
     Analyse l'émotion d'un texte à l'aide de l'API Mistral AI Chat Completions.
+    Retourne l'émotion avec un emoji correspondant.
     """
     try:
         logger.info("Début de l'analyse émotionnelle")
@@ -89,7 +126,12 @@ def analyze_emotion(text: str):
             json={
                 "model": "mistral-small-latest",
                 "messages": [
-                    {"role": "system", "content": "Vous êtes un classificateur d'émotions de rêves. Analysez le texte du rêve et renvoyez un seul mot décrivant l'émotion principale (Heureux, Stressant, Neutre, Triste, Excité, Effrayant)."},
+                    {
+                        "role": "system",
+                        "content": """Vous êtes un classificateur d'émotions de rêves.
+                        Analysez le texte du rêve et renvoyez un seul mot parmi les suivants :
+                        Heureux, Stressant, Neutre, Triste, Excité, Effrayant, Surpris, En colère, Amoureux, Paisible"""
+                    },
                     {"role": "user", "content": text}
                 ],
                 "max_tokens": 10,
@@ -102,14 +144,15 @@ def analyze_emotion(text: str):
         emotion_result = chat_response.json()
         
         if emotion_result and emotion_result.get("choices") and emotion_result["choices"][0].get("message"):
+            emotion = emotion_result["choices"][0]["message"]["content"].strip()
             logger.info("Analyse émotionnelle réussie")
-            return emotion_result["choices"][0]["message"]["content"].strip()
+            return get_emotion_with_emoji(emotion)
         else:
             logger.warning("Réponse d'analyse émotionnelle invalide")
-            return "Aucun résultat d'émotion trouvé."
+            return "Aucun résultat d'émotion trouvé ❓"
     except requests.exceptions.Timeout:
         logger.error("Timeout lors de l'analyse émotionnelle")
-        return "Erreur : Le serveur met trop de temps à répondre"
+        return "Erreur : Le serveur met trop de temps à répondre ⏱️"
     except Exception as e:
         logger.error(f"Erreur lors de l'analyse émotionnelle: {e}")
-        return f"Erreur lors de l'analyse émotionnelle : {e}" 
+        return f"Erreur lors de l'analyse émotionnelle : {e} ❌" 

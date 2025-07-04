@@ -52,7 +52,7 @@ def main():
     try:
         initialize_session_state()
         
-        st.title("✨ Synthétiseur de Rêves ✨")
+        st.title("✨ DreamAI ✨")
         st.write("Bienvenue dans l'application qui transforme vos rêves racontés en images et analyse leur ambiance émotionnelle.")
 
         # Section 1: Saisie du rêve
@@ -152,7 +152,7 @@ def main():
             st.sidebar.info("📝 Vos rêves passés et leurs analyses seront affichés ici.")
 
         st.write("---")
-        st.write("Développé avec ❤️ pour le projet « Synthétiseur de rêves »")
+        st.write("F.B»")
 
     except Exception as e:
         logger.error(f"Erreur inattendue dans l'application: {e}")
